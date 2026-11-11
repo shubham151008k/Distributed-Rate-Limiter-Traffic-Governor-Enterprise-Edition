@@ -37,33 +37,84 @@ async function refresh() {
     const stats = await api("/api/stats");
     $("allowed-count").textContent = stats.allowed;
     $("denied-count").textContent = stats.denied;
-    $("server-status").textContent = "Connected to the server.";
-    const rows = stats.recent.map((r) =>
-      `<tr><td>${r.client}</td><td>${r.allowed ? "Allowed" : "Denied"}</td><td>${r.remaining_tokens}</td></tr>`
-    ).join("");
-    $("recent").innerHTML = rows || '<tr><td colspan="3">No requests yet</td></tr>';
+    const serverStatus = $("server-status");
+    serverStatus.textContent = "● Server Connected";
+    serverStatus.style.color = "#dcfce7";
+    serverStatus.style.background = "rgba(22, 163, 74, 0.18)";
+
+const recentTable = $("recent");
+recentTable.replaceChildren();
+
+if (stats.recent.length === 0) {
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+
+  cell.colSpan = 3;
+  cell.textContent = "No requests yet";
+
+  row.appendChild(cell);
+  recentTable.appendChild(row);
+} else {
+  stats.recent.forEach((r) => {
+    const row = document.createElement("tr");
+
+    const clientCell = document.createElement("td");
+    clientCell.textContent = r.client;
+
+    const decisionCell = document.createElement("td");
+    decisionCell.textContent = r.allowed ? "Allowed" : "Denied";
+
+    const remainingCell = document.createElement("td");
+    remainingCell.textContent = r.remaining_tokens;
+
+    row.append(clientCell, decisionCell, remainingCell);
+    recentTable.appendChild(row);
+  });
+}
     const status = await api("/api/status?client=" + encodeURIComponent(client()));
     $("gauge-text").textContent = `${status.remaining_tokens} / ${status.capacity}`;
     $("gauge").style.width = (status.remaining_tokens / status.capacity) * 100 + "%";
   } catch (e) {
-    $("server-status").textContent = "Cannot reach the server — is python server.py running?";
+    const serverStatus = $("server-status");
+    serverStatus.textContent = "● Server Disconnected";
+    serverStatus.style.color = "#fee2e2";
+    serverStatus.style.background = "rgba(220, 38, 38, 0.18)";
   }
 }
 
 $("send").addEventListener("click", async () => {
-  try { show(await api("/api/request", { client: client() })); await refresh(); }
-  catch (e) { alert(e.message); }
+  $("request-error").textContent = "";
+
+  try {
+    show(await api("/api/request", { client: client() }));
+    await refresh();
+  } catch (e) {
+    $("request-error").textContent = "Request failed: " + e.message;
+  }
 });
 
+
 $("burst").addEventListener("click", async () => {
+  $("request-error").textContent = "";
+
   try {
-    const out = await api("/api/burst", { client: client(), count: 15 });
+    const out = await api("/api/burst", {
+      client: client(),
+      count: 15
+    });
+
     const last = out.results[out.results.length - 1];
     show(last);
-    $("retry-note").textContent = `Burst ×15: ${out.allowed} allowed, ${out.denied} denied.`;
+
+    $("retry-note").textContent =
+      `Burst ×15: ${out.allowed} allowed, ${out.denied} denied.`;
+
     await refresh();
-  } catch (e) { alert(e.message); }
+  } catch (e) {
+    $("request-error").textContent = "Burst failed: " + e.message;
+  }
 });
+
 
 $("apply-config").addEventListener("click", async () => {
   $("config-error").textContent = ""; $("config-ok").textContent = "";
