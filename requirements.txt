@@ -1,0 +1,3 @@
+# Tier 3 only - the core app runs without these.
+pandas==2.1.4
+matplotlib==3.6.3
