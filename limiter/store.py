@@ -1,10 +1,3 @@
-"""Per-client bucket store (PRD v0.3, Sections 6 and 10.2).
-
-One dictionary, keyed by client, protected by one threading.Lock.
-The lock covers lookup AND update, so two threads cannot spend
-the same token. New clients start with a full bucket.
-State is in memory only and is lost on restart.
-"""
 import threading
 
 from .config import (
@@ -15,7 +8,6 @@ from .config import (
     validate_config,
 )
 from .token_bucket import TokenBucket
-
 
 class BucketStore:
     def __init__(self, capacity=DEFAULT_CAPACITY,

@@ -1,11 +1,5 @@
-"""Token bucket with lazy refill (PRD v0.3, Section 10.2).
-
-Only the Python standard library is used. No Redis, no database,
-no web framework.
-"""
 import math
 import time
-
 
 class TokenBucket:
     """One client's bucket.
@@ -18,15 +12,14 @@ class TokenBucket:
         self.capacity = int(capacity)
         self.refill_rate = float(refill_rate)
         self.cost = int(cost)
-        # clock is injected for tests; in real use it is time.monotonic.
-        # A fake clock in the tests lets us control time exactly.
+
         self._clock = clock or time.monotonic
         self.tokens = float(self.capacity)
         self.last_refill = self._clock()
 
     def _refill(self):
         now = self._clock()
-        # max(0, ...) means a clock going backwards cannot remove tokens.
+
         elapsed = max(0.0, now - self.last_refill)
         self.tokens = min(
             float(self.capacity), self.tokens + elapsed * self.refill_rate

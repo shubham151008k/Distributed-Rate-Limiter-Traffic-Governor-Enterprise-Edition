@@ -1,21 +1,3 @@
-"""Minimal HTTP server (PRD v0.3, Tier 1).
-
-Python standard library only: http.server ThreadingHTTPServer.
-Run:  python server.py
-Then open http://localhost:8000 in a browser.
-
-JSON endpoints (Tier 1 only, so no 429 / fail-open here - that is Tier 2):
-  POST /api/request  {"client": "192.0.2.10"}
-      -> {"allowed": true/false, "remaining_tokens": 9, ...}  (always HTTP 200)
-  POST /api/burst    {"client": "...", "count": 15}
-      -> {"allowed": 10, "denied": 5, "results": [...]}
-  POST /api/config   {"capacity": 10, "refill_rate": 2}
-      -> HTTP 400 + {"error": "..."} if invalid, config unchanged
-  POST /api/reset    {}
-  GET  /api/config   -> current config
-  GET  /api/status?client=...  -> remaining tokens for that client
-  GET  /api/stats    -> allowed / denied totals
-"""
 import json
 import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -29,8 +11,7 @@ PORT = 8000
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 store = BucketStore()
-recent = []  # last 20 decisions, newest first; in memory only
-
+recent = []
 
 def _send_json(handler, status, payload):
     body = json.dumps(payload).encode("utf-8")
@@ -40,19 +21,17 @@ def _send_json(handler, status, payload):
     handler.end_headers()
     handler.wfile.write(body)
 
-
 def _read_json(handler):
     length = int(handler.headers.get("Content-Length") or 0)
     if not length:
         return {}
     return json.loads(handler.rfile.read(length).decode("utf-8") or "{}")
 
-
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
-    def log_message(self, *args):  # keep the terminal clean for the demo
+    def log_message(self, *args):
         pass
 
     def do_GET(self):
@@ -134,7 +113,6 @@ class Handler(SimpleHTTPRequestHandler):
             return _send_json(self, 200, {"ok": True})
 
         return _send_json(self, 404, {"error": "Unknown endpoint."})
-
 
 if __name__ == "__main__":
     print(f"Rate limiter demo running at http://{HOST}:{PORT}")

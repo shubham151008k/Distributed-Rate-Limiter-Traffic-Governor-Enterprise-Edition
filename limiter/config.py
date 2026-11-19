@@ -1,15 +1,12 @@
-"""Defaults and validation (PRD v0.3, Sections 7 and 10.1)."""
 import re
 
 DEFAULT_CAPACITY = 10
 DEFAULT_REFILL_RATE = 2.0
 DEFAULT_COST = 1
 
-# Client keys: simulated labels / IPs typed or selected in the UI.
 CLIENT_KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
 
 PRESET_CLIENTS = ["192.0.2.10", "198.51.100.7", "203.0.113.25"]
-
 
 def validate_config(capacity, refill_rate, cost=DEFAULT_COST):
     """Check a new config. Returns (capacity, refill_rate, cost).
@@ -39,7 +36,6 @@ def validate_config(capacity, refill_rate, cost=DEFAULT_COST):
     if not 1 <= cost <= capacity:
         raise ValueError("Cost must be a whole number from 1 up to the capacity.")
     return capacity, refill_rate, cost
-
 
 def validate_client_key(key):
     """Check a client key. Returns the key, or raises ValueError."""

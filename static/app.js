@@ -1,5 +1,3 @@
-// Demo page logic: small fetch calls, then update gauge, badge, counters, list.
-// No build step, no framework - plain JavaScript, as the PRD requires.
 const $ = (id) => document.getElementById(id);
 
 function client() {
@@ -98,16 +96,17 @@ $("burst").addEventListener("click", async () => {
   $("request-error").textContent = "";
 
   try {
+    const count = Math.min(100, Math.max(1, Number($("burst-count").value) || 15));
     const out = await api("/api/burst", {
       client: client(),
-      count: 15
+      count: count
     });
 
     const last = out.results[out.results.length - 1];
     show(last);
 
     $("retry-note").textContent =
-      `Burst ×15: ${out.allowed} allowed, ${out.denied} denied.`;
+      `Burst ×${count}: ${out.allowed} allowed, ${out.denied} denied.`;
 
     await refresh();
   } catch (e) {

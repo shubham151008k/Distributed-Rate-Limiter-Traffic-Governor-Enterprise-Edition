@@ -1,18 +1,3 @@
-"""Tier 3: generate a synthetic traffic log (PRD v0.3, Section 6 / Journey E).
-
-- 10,000 valid rows + 5 malformed rows (10,005 data lines total).
-- Schema matches the Tier 2 CSV decision log so the analysis script can
-  also accept a real Tier 2 log:
-  timestamp,client_ip,decision,remaining_tokens,retry_after_ms,overhead_us
-  decision is "allowed" or "rejected".
-- IPs use the PRD documentation ranges only: 192.0.2.0/24,
-  198.51.100.0/24, 203.0.113.0/24. No real user IPs.
-- Seeded (random seed 42), so re-running gives the same log.
-
-Run on Windows:
-    python generate_log.py
-    -> writes traffic_log.csv in this folder
-"""
 import csv
 import random
 from datetime import datetime, timedelta
@@ -20,11 +5,10 @@ from datetime import datetime, timedelta
 SEED = 42
 N_ROWS = 10_000
 START = datetime(2026, 11, 5, 10, 0, 0)
-WINDOW_SECONDS = 600  # 10 one-minute windows
+WINDOW_SECONDS = 600
 
-# (ip, share of traffic, probability a request from this ip is rejected)
 IPS = [
-    ("203.0.113.10", 0.35, 0.45),   # heavy hitter, throttled most
+    ("203.0.113.10", 0.35, 0.45),
     ("192.0.2.15", 0.20, 0.20),
     ("198.51.100.23", 0.15, 0.10),
     ("192.0.2.42", 0.10, 0.05),
@@ -41,7 +25,6 @@ MALFORMED_LINES = [
     "2026-13-99 25:61:61,192.0.2.15,rejected,0,500,100",
     ",,,",
 ]
-
 
 def main():
     rng = random.Random(SEED)
@@ -62,7 +45,7 @@ def main():
             500 if rejected else 0,
             rng.randint(20, 200),
         ])
-    rows.sort(key=lambda r: r[0])  # chronological, like a real log
+    rows.sort(key=lambda r: r[0])
 
     with open("traffic_log.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -74,7 +57,6 @@ def main():
 
     print(f"Wrote traffic_log.csv: {N_ROWS} valid rows + "
           f"{len(MALFORMED_LINES)} malformed lines")
-
 
 if __name__ == "__main__":
     main()

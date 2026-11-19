@@ -46,7 +46,10 @@
           <input id="custom-client" class="form-control" placeholder="e.g. 192.0.2.99">
         </div>
         <button id="send" class="btn btn-success me-2">Send request</button>
-        <button id="burst" class="btn btn-warning">Burst &times;15</button>
+        <div class="input-group mb-2" style="max-width: 280px;">
+          <input id="burst-count" type="number" class="form-control" value="15" min="1" max="100" aria-label="Burst count">
+          <button id="burst" class="btn btn-warning">Burst</button>
+        </div>
         <button id="reset" class="btn btn-outline-secondary float-end">Reset</button>
         <p id="request-error" class="text-danger mt-2" role="alert" aria-live="polite"></p>
       </section>
