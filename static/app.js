@@ -138,20 +138,3 @@ $("reset").addEventListener("click", async () => {
 
 $("client").addEventListener("change", refresh);
 refresh();
-
-// Dark mode switch — toggles data-theme on <html>.
-// No localStorage: it resets to light when the page is reloaded.
-const themeToggle = $("theme-toggle");
-function setTheme(dark) {
-  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-  document.documentElement.setAttribute("data-bs-theme", dark ? "dark" : "light");
-  themeToggle.textContent = dark ? "Light mode" : "Dark mode";
-  themeToggle.setAttribute("aria-pressed", String(dark));
-}
-themeToggle.addEventListener("click", () => {
-  setTheme(document.documentElement.getAttribute("data-theme") !== "dark");
-});
-// Start dark if the computer itself is set to dark mode.
-if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-  setTheme(true);
-}
