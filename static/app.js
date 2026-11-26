@@ -28,6 +28,45 @@ function show(result) {
   $("retry-note").textContent = result.allowed
     ? ""
     : `Denied — retry in about ${result.retry_after_ms} ms.`;
+  updateInfographics(result.remaining_tokens, result.capacity,
+    Number($("inf-allowed").textContent) || 0,
+    Number($("inf-denied").textContent) || 0);
+}
+
+
+function updateInfographics(tokens, capacity, allowed, denied) {
+  $("inf-tokens").textContent = tokens;
+  $("inf-capacity").textContent = capacity;
+  $("inf-allowed").textContent = allowed;
+  $("inf-denied").textContent = denied;
+  $("inf-refill").textContent = $("refill").value;
+  const pct = capacity ? (tokens / capacity) * 100 : 0;
+  $("bucket-fill").style.height = pct + "%";
+  $("bucket-label").textContent =
+    pct >= 75 ? "Full — every request gets in." :
+    pct >= 40 ? "Half full — requests still getting in." :
+    pct > 0 ? "Running low — denials are coming." :
+    "Empty — every request is denied until it refills.";
+  const total = allowed + denied;
+  const ap = total ? Math.round((allowed / total) * 100) : 50;
+  $("ratio-allowed").style.width = ap + "%";
+  $("ratio-denied").style.width = (100 - ap) + "%";
+  $("ratio-label").textContent = total
+    ? `${allowed} allowed (${ap}%) vs ${denied} denied (${100 - ap}%) — out of ${total} requests.`
+    : "No requests yet — send one or hit Burst.";
+}
+
+function updateMiniChart(recent) {
+  const chart = $("mini-chart");
+  chart.replaceChildren();
+  const rows = (recent || []).slice(0, 20).reverse();
+  for (let i = 0; i < 20; i++) {
+    const bar = document.createElement("div");
+    bar.className = "mini-bar " + (i < rows.length ? (rows[i].allowed ? "allow" : "deny") : "empty");
+    bar.style.height = i < rows.length ? "100%" : "6px";
+    bar.title = i < rows.length ? (rows[i].allowed ? "Allowed" : "Denied") + " — " + rows[i].client : "No request yet";
+    chart.appendChild(bar);
+  }
 }
 
 async function refresh() {
@@ -35,6 +74,7 @@ async function refresh() {
     const stats = await api("/api/stats");
     $("allowed-count").textContent = stats.allowed;
     $("denied-count").textContent = stats.denied;
+    updateMiniChart(stats.recent);
     const serverStatus = $("server-status");
     serverStatus.textContent = "● Server Connected";
     serverStatus.style.color = "#dcfce7";
@@ -72,6 +112,7 @@ if (stats.recent.length === 0) {
     const status = await api("/api/status?client=" + encodeURIComponent(client()));
     $("gauge-text").textContent = `${status.remaining_tokens} / ${status.capacity}`;
     $("gauge").style.width = (status.remaining_tokens / status.capacity) * 100 + "%";
+    updateInfographics(status.remaining_tokens, status.capacity, stats.allowed, stats.denied);
   } catch (e) {
     const serverStatus = $("server-status");
     serverStatus.textContent = "● Server Disconnected";
