@@ -1,9 +1,15 @@
 # Run this project on Vercel
 
-Vercel does not run a server that stays on. The demo page is served
-as static files, and the API runs as a serverless function in
-`api/index.py` (the same token-bucket code, wrapped in Vercel's
-`BaseHTTPRequestHandler` handler).
+Vercel treats the repo's root `server.py` as the Python app, so the
+whole app runs as one function — the same `server.py` that runs
+locally with `python server.py`. No rewrites are needed: `/` serves
+the demo page from `static/`, and `/api/*` is the same API.
+
+`vercel.json` only does two things:
+- `installCommand` skips pip install (the app is Python standard
+  library only; `requirements.txt` is only for Tier 3 on a laptop).
+- `includeFiles` bundles `static/` and `limiter/` into the function,
+  so the page files are actually there to serve.
 
 ## Honest limit
 
