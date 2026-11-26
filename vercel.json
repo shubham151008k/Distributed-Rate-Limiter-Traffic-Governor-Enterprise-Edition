@@ -1,8 +1,11 @@
 {
   "installCommand": "echo \"no install needed\"",
   "functions": {
-    "server.py": {
+    "api/index.py": {
       "includeFiles": "static/**, limiter/**"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/:path*", "destination": "/api/index.py" }
+  ]
 }

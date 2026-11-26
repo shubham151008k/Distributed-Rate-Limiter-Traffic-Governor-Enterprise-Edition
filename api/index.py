@@ -20,11 +20,39 @@ def _send_json(handler, status, payload):
     handler.end_headers()
     handler.wfile.write(body)
 
+
+def _effective_path(handler):
+    parsed = urlparse(handler.path)
+    query = parse_qs(parsed.query)
+    if parsed.path in ("/api/index.py", "/api") and "path" in query:
+        return "/" + query["path"][0].lstrip("/")
+    if parsed.path == "/api/index.py":
+        return "/"
+    return parsed.path
+
 def _read_json(handler):
     length = int(handler.headers.get("Content-Length") or 0)
     if not length:
         return {}
     return json.loads(handler.rfile.read(length).decode("utf-8") or "{}")
+
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")
+_CONTENT_TYPES = {".html": "text/html", ".js": "application/javascript", ".css": "text/css"}
+
+def _serve_static(handler, path):
+    name = "index.html" if path in ("/", "/index.html") else path.lstrip("/")
+    try:
+        with open(os.path.join(STATIC_DIR, name), "rb") as f:
+            body = f.read()
+    except (OSError, ValueError):
+        return _send_json(handler, 404, {"error": "Not found."})
+    ext = os.path.splitext(name)[1]
+    handler.send_response(200)
+    handler.send_header("Content-Type", _CONTENT_TYPES.get(ext, "application/octet-stream"))
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
 
 class handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
@@ -32,6 +60,9 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        parsed = parsed._replace(path=_effective_path(self))
+        if parsed.path in ("/", "/index.html", "/app.js", "/styles.css"):
+            return _serve_static(self, parsed.path)
         if parsed.path == "/api/config":
             return _send_json(self, 200, {
                 "capacity": store.capacity,
@@ -54,6 +85,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        parsed = parsed._replace(path=_effective_path(self))
         try:
             data = _read_json(self)
         except (json.JSONDecodeError, ValueError):
